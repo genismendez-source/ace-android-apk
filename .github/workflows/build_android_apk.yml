@@ -35,7 +35,7 @@ jobs:
 
       - name: Compilar APK para Android 10+ (API 29+)
         run: |
-          flet build apk --project "ControlHorarioACE" --org "es.serviciostecnologicosai"
+          flet build apk --project "ControlHorarioACE" --org "es.serviciostecnologicosai" -y
 
       - name: Subir APK listo para descargar e instalar en móvil
         uses: actions/upload-artifact@v4
