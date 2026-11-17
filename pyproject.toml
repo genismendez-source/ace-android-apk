@@ -20,3 +20,7 @@ copyright = "Copyright (C) 2026 by SERVICIOS TECNOLOGICOS AI, SL"
 min_sdk_version = 29
 target_sdk_version = 34
 permissions = ["android.permission.INTERNET"]
+
+[tool.flet.flutter.pubspec.dependency_overrides]
+wakelock_plus = "1.2.8"
+package_info_plus = "8.0.2"
