@@ -1,26 +1,44 @@
-[project]
-name = "control-horario-ace"
-version = "20.9.6"
-description = "Control Horario Legal ACE (Art. 34.9 ET) - Android 10+ Cloud Sync"
-requires-python = ">=3.9"
-authors = [
-    { name = "SERVICIOS TECNOLOGICOS AI, SL" }
-]
-dependencies = [
-    "flet==0.24.1"
-]
+name: Compilar APK Android 10+ (Control Horario ACE)
 
-[tool.flet]
-org = "es.serviciostecnologicosai"
-product = "Control Horario ACE"
-company = "SERVICIOS TECNOLOGICOS AI, SL"
-copyright = "Copyright (C) 2026 by SERVICIOS TECNOLOGICOS AI, SL"
+on:
+  workflow_dispatch:
 
-[tool.flet.android]
-min_sdk_version = 29
-target_sdk_version = 34
-permissions = ["android.permission.INTERNET"]
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
 
-[tool.flet.flutter.pubspec.dependency_overrides]
-wakelock_plus = "1.2.8"
-package_info_plus = "8.0.2"
+      - name: Configurar Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Configurar Flutter 3.24.0 para Flet 0.24.1
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          flutter-version: '3.24.0'
+
+      - name: Aceptar licencias de Android
+        run: yes | flutter doctor --android-licenses || true
+
+      - name: Instalar Flet
+        run: pip install flet==0.24.1
+
+      - name: Compilar APK
+        run: flet build apk --verbose --no-rich-output
+
+      - name: Subir archivo final
+        uses: actions/upload-artifact@v4
+        with:
+          name: ControlHorarioACE-Android-APK
+          path: build/apk/*.apk
