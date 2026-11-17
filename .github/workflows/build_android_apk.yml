@@ -22,17 +22,17 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Configurar Flutter 3.24.0 para Flet 0.24.1
+      - name: Configurar Flutter 3.27.1
         uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-          flutter-version: '3.24.0'
+          flutter-version: '3.27.1'
 
       - name: Aceptar licencias de Android
         run: yes | flutter doctor --android-licenses || true
 
-      - name: Instalar Flet
-        run: pip install flet==0.24.1
+      - name: Instalar Flet 0.25.2
+        run: pip install flet==0.25.2
 
       - name: Compilar APK
         run: flet build apk --verbose --no-rich-output
