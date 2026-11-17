@@ -1,15 +1,13 @@
 [project]
 name = "control-horario-ace"
 version = "20.9.6"
-description = "Control Horario Legal ACE (Art. 34.9 ET) - Android 10+ & IOS Cloud Sync"
-readme = "GUIA_SINCRONIZACION_OPCION_B.md"
+description = "Control Horario Legal ACE (Art. 34.9 ET) - Android 10+ Cloud Sync"
 requires-python = ">=3.9"
 authors = [
     { name = "SERVICIOS TECNOLOGICOS AI, SL" }
 ]
 dependencies = [
-    "flet==0.24.1",
-    "supabase"
+    "flet==0.24.1"
 ]
 
 [tool.flet]
