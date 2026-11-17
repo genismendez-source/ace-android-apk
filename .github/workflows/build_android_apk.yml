@@ -31,20 +31,8 @@ jobs:
       - name: Aceptar licencias de Android
         run: yes | flutter doctor --android-licenses || true
 
-      - name: Instalar Flet 0.24.1 y flet-cli explícitamente
-        run: pip install flet==0.24.1 flet-cli==0.24.1
-
-      - name: Bloquear wakelock_plus 1.2.5 en la plantilla de Flet
-        run: |
-          git clone --depth 1 --branch 0.24.1 https://github.com/flet-dev/flet-build-template.git /tmp/plantilla_flet
-          cat << 'EOF' >> /tmp/plantilla_flet/{{cookiecutter.out_dir}}/pubspec.yaml
-
-          dependency_overrides:
-            wakelock_plus: 1.2.5
-            wakelock_plus_platform_interface: 1.2.1
-            package_info_plus: 8.0.0
-            win32: 5.5.4
-          EOF
+      - name: Instalar Flet 0.24.1
+        run: pip install flet==0.24.1 cookiecutter packaging
 
       - name: Limpiar pyproject.toml y requirements.txt
         run: |
@@ -55,20 +43,58 @@ jobs:
           version = "20.9.6"
           description = "Control Horario Legal ACE"
           requires-python = ">=3.9"
-          dependencies = ["flet==0.24.1"]
+          dependencies = [
+              "flet==0.24.1"
+          ]
 
           [tool.flet]
           org = "es.serviciostecnologicosai"
           product = "Control Horario ACE"
+          company = "SERVICIOS TECNOLOGICOS AI, SL"
+          copyright = "Copyright (C) 2026 by SERVICIOS TECNOLOGICOS AI, SL"
 
           [tool.flet.android]
           min_sdk_version = 29
           target_sdk_version = 34
           permissions = ["android.permission.INTERNET"]
+
+          [tool.flet.flutter.dependency_overrides]
+          wakelock_plus = "1.2.5"
+          wakelock_plus_platform_interface = "1.2.1"
+          package_info_plus = "8.0.0"
           EOF
 
-      - name: Compilar APK usando plantilla parcheada
-        run: flet build apk --template-dir /tmp/plantilla_flet --verbose --no-rich-output
+      - name: Preparar plantilla local de Flet 0.24.1 sin wakelock_plus 1.4.0
+        run: |
+          git clone --branch 0.24.1 https://github.com/flet-dev/flet-build-template.git /tmp/flet-template
+          python3 - << 'EOF'
+          ruta = "/tmp/flet-template/{{cookiecutter.out_dir}}/pubspec.yaml"
+          with open(ruta, "r", encoding="utf-8") as f:
+              contenido = f.read()
+
+          # Forzar versiones compatibles con Gradle de Flet 0.24.1 antes de que Flutter descargue paquetes
+          bloque_override = """
+          dependency_overrides:
+            wakelock_plus: 1.2.5
+            wakelock_plus_platform_interface: 1.2.1
+            package_info_plus: 8.0.0
+          """
+          if "dependency_overrides:" in contenido:
+              contenido = contenido.replace(
+                  "dependency_overrides:",
+                  "dependency_overrides:\n  wakelock_plus: 1.2.5\n  wakelock_plus_platform_interface: 1.2.1\n  package_info_plus: 8.0.0",
+                  1
+              )
+          else:
+              contenido = contenido + "\n" + bloque_override.strip() + "\n"
+
+          with open(ruta, "w", encoding="utf-8") as f:
+              f.write(contenido)
+          print("pubspec.yaml de la plantilla actualizado correctamente")
+          EOF
+
+      - name: Compilar APK
+        run: flet build apk --template /tmp/flet-template --verbose --no-rich-output
 
       - name: Subir archivo final
         uses: actions/upload-artifact@v4
