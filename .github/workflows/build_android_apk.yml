@@ -26,6 +26,9 @@ jobs:
         with:
           channel: 'stable'
 
+      - name: Aceptar licencias de Android
+        run: yes | flutter doctor --android-licenses
+
       - name: Instalar librerias
         run: pip install flet==0.25.2 cryptography
 
