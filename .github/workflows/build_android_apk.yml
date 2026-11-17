@@ -30,12 +30,10 @@ jobs:
         run: pip install flet==0.24.1 cryptography
 
       - name: Compilar APK
-        
-      - name: Compilar APK
         run: flet build apk --verbose --no-rich-output
+
       - name: Subir archivo final
         uses: actions/upload-artifact@v4
         with:
           name: ControlHorarioACE-Android-APK
           path: build/apk/*.apk
-          
