@@ -1,13 +1,13 @@
-name: Compilar APK Android 10+ (Control Horario ACE Cloud Sync)
+name: Compilar APK Android 10+ (Control Horario ACE)
 
 on:
   workflow_dispatch:
 
 jobs:
-  build-android-apk:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Descargar código del repositorio
+      - name: Descargar repositorio
         uses: actions/checkout@v4
 
       - name: Configurar Java 17
@@ -16,35 +16,20 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Configurar Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Instalar Flet
+      - name: Instalar librerias
         run: pip install flet==0.24.1 cryptography
 
-      - name: Generar proyecto Flutter con Flet
-        run: flet create my_app
+      - name: Compilar APK
+        run: flet build apk --verbose
 
-      - name: Mover tu código al proyecto Flutter
-        run: |
-          cp main.py my_app/
-          cp ace_cloud_sync.py my_app/
-
-      - name: Compilar APK final (Android)
-        run: |
-          cd my_app
-          flutter build apk --release
-
-      - name: Subir APK
+      - name: Subir archivo final
         uses: actions/upload-artifact@v4
         with:
           name: ControlHorarioACE-Android-APK
-          path: my_app/build/app/outputs/flutter-apk/app-release.apk
+          path: build/apk/*.apk
           
