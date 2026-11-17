@@ -10,21 +10,12 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v4
 
-      - name: Configurar Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
-      - name: Instalar Flet y librerias
-        run: pip install flet==0.24.1 cryptography==41.0.7
-
-      - name: Compilar APK (Flet Action)
+      - name: Compilar APK con motor oficial
         uses: flet-dev/flet-build-action@v1
         with:
           target: apk
-          project-dir: .
 
-      - name: Subir archivo final
+      - name: Subir instalador final
         uses: actions/upload-artifact@v4
         with:
           name: ControlHorarioACE-Android-APK
