@@ -27,7 +27,7 @@ jobs:
           channel: 'stable'
 
       - name: Instalar librerias
-        run: pip install flet==0.24.1 cryptography
+        run: pip install flet==0.25.2 cryptography
 
       - name: Compilar APK
         run: flet build apk --verbose --no-rich-output
