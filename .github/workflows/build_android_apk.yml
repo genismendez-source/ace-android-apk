@@ -6,7 +6,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
         run: yes | flutter doctor --android-licenses || true
 
       - name: Instalar Flet 0.24.1
-        run: pip install flet==0.24.1 cookiecutter packaging
+        run: pip install flet==0.24.1 cookiecutter packaging pyyaml
 
       - name: Limpiar pyproject.toml y requirements.txt
         run: |
@@ -64,34 +64,69 @@ jobs:
           package_info_plus = "8.0.0"
           EOF
 
-      - name: Preparar plantilla local de Flet 0.24.1 sin wakelock_plus 1.4.0
+      - name: Preparar plantilla local y fijar dependencias
         run: |
-          git clone --branch 0.24.1 https://github.com/flet-dev/flet-build-template.git /tmp/flet-template
-          python3 - << 'EOF'
-          ruta = "/tmp/flet-template/{{cookiecutter.out_dir}}/pubspec.yaml"
-          with open(ruta, "r", encoding="utf-8") as f:
-              contenido = f.read()
+          git clone --branch 0.24.1 \
+            https://github.com/flet-dev/flet-build-template.git \
+            /tmp/flet-template
 
-          # Forzar versiones compatibles con Gradle de Flet 0.24.1 antes de que Flutter descargue paquetes
-          bloque_override = """
-          dependency_overrides:
-            wakelock_plus: 1.2.5
-            wakelock_plus_platform_interface: 1.2.1
-            package_info_plus: 8.0.0
-          """
-          if "dependency_overrides:" in contenido:
-              contenido = contenido.replace(
-                  "dependency_overrides:",
-                  "dependency_overrides:\n  wakelock_plus: 1.2.5\n  wakelock_plus_platform_interface: 1.2.1\n  package_info_plus: 8.0.0",
-                  1
-              )
+          python3 - << 'PY'
+          from pathlib import Path
+          import yaml
+
+          ruta = Path("/tmp/flet-template/{{cookiecutter.out_dir}}/pubspec.yaml")
+          contenido = ruta.read_text(encoding="utf-8")
+          lineas = contenido.splitlines(keepends=True)
+
+          inicio = next(
+              (i for i, l in enumerate(lineas) if l.startswith("dependency_overrides:")),
+              None,
+          )
+
+          if inicio is None:
+              final = len(lineas)
+              overrides = {}
           else:
-              contenido = contenido + "\n" + bloque_override.strip() + "\n"
+              final = inicio + 1
+              while final < len(lineas):
+                  l = lineas[final]
+                  if l.strip() and not l[0].isspace() and not l.startswith("#"):
+                      break
+                  final += 1
+              bloque = "".join(lineas[inicio:final])
+              try:
+                  datos = yaml.safe_load(bloque) or {}
+                  overrides = datos.get("dependency_overrides") or {}
+              except Exception:
+                  overrides = {}
 
-          with open(ruta, "w", encoding="utf-8") as f:
-              f.write(contenido)
-          print("pubspec.yaml de la plantilla actualizado correctamente")
-          EOF
+          overrides.update({
+              "wakelock_plus": "1.2.5",
+              "wakelock_plus_platform_interface": "1.2.1",
+              "package_info_plus": "8.0.0",
+          })
+
+          nuevo_bloque = yaml.safe_dump(
+              {"dependency_overrides": overrides}, sort_keys=False
+          )
+
+          if inicio is None:
+              resultado = contenido.rstrip() + "\n\n" + nuevo_bloque
+          else:
+              resultado = (
+                  "".join(lineas[:inicio])
+                  + nuevo_bloque
+                  + "\n"
+                  + "".join(lineas[final:])
+              )
+
+          ruta.write_text(resultado, encoding="utf-8")
+          print("Dependencias fijadas en la plantilla:")
+          print(nuevo_bloque)
+          PY
+
+      - name: Mostrar pubspec.yaml final de la plantilla
+        run: cat "/tmp/flet-template/{{cookiecutter.out_dir}}/pubspec.yaml"
 
       - name: Compilar APK
         run: flet build apk --template /tmp/flet-template --verbose --no-rich-output
