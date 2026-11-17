@@ -31,27 +31,24 @@ jobs:
       - name: Aceptar licencias de Android
         run: yes | flutter doctor --android-licenses || true
 
-      - name: Instalar Flet 0.24.1
-        run: pip install flet==0.24.1
+      - name: Instalar Flet 0.24.1 y flet-cli explícitamente
+        run: pip install flet==0.24.1 flet-cli==0.24.1
 
-      - name: Parchear plantilla de Flet contra wakelock_plus 1.4.0
+      - name: Bloquear wakelock_plus 1.2.5 en la plantilla de Flet
         run: |
-          python3 - << 'EOF'
-          import pathlib, flet_cli.commands.build as fb
-          p = pathlib.Path(fb.__file__)
-          txt = p.read_text()
-          # Inyectar dependency_overrides directamente en el generador de pubspec.yaml de Flet
-          objetivo = 'pubspec["dependencies"] = {'
-          parche = 'pubspec["dependency_overrides"] = {"wakelock_plus": "1.2.5", "package_info_plus": "8.0.0", "win32": "5.5.4"}\n        ' + objetivo
-          if objetivo in txt:
-              p.write_text(txt.replace(objetivo, parche, 1))
-              print("Parche aplicado correctamente a flet_cli")
-          else:
-              print("Estructura alternativa en flet_cli, aplicando override via env")
+          git clone --depth 1 --branch 0.24.1 https://github.com/flet-dev/flet-build-template.git /tmp/plantilla_flet
+          cat << 'EOF' >> /tmp/plantilla_flet/{{cookiecutter.out_dir}}/pubspec.yaml
+
+          dependency_overrides:
+            wakelock_plus: 1.2.5
+            wakelock_plus_platform_interface: 1.2.1
+            package_info_plus: 8.0.0
+            win32: 5.5.4
           EOF
 
-      - name: Actualizar pyproject.toml a flet 0.24.1 limpio
+      - name: Limpiar pyproject.toml y requirements.txt
         run: |
+          rm -f requirements.txt
           cat << 'EOF' > pyproject.toml
           [project]
           name = "control-horario-ace"
@@ -69,10 +66,9 @@ jobs:
           target_sdk_version = 34
           permissions = ["android.permission.INTERNET"]
           EOF
-          rm -f requirements.txt
 
-      - name: Compilar APK
-        run: flet build apk --verbose --no-rich-output
+      - name: Compilar APK usando plantilla parcheada
+        run: flet build apk --template-dir /tmp/plantilla_flet --verbose --no-rich-output
 
       - name: Subir archivo final
         uses: actions/upload-artifact@v4
